@@ -1,7 +1,7 @@
--- wget run http://files.konoca.com/code/mc/ccweb/client/updater.lua
--- wget http://files.konoca.com/code/mc/ccweb/client/updater.lua updater.lua
+-- wget run https://raw.githubusercontent.com/Konoca/CCWeb/refs/heads/main/client/updater.lua
+-- wget https://raw.githubusercontent.com/Konoca/CCWeb/refs/heads/main/client/updater.lua updater.lua
 
-local server = 'http://files.konoca.com/code/mc/ccweb/client'
+local server = 'https://raw.githubusercontent.com/Konoca/CCWeb/refs/heads/main/client'
 local files = {
     'updater.lua',
     'web.lua',
