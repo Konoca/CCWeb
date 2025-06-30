@@ -1,0 +1,42 @@
+\init{white}{black}
+How to use \t{Kona's Storage Interface}{green}!
+
+\t{Requirements}{red}
+- A Computer with CCWeb Installed
+- Your storage containers to store items
+- An empty container for input / output
+- Wired modems for all storage containers
+- Enough networking cable to connect everything
+
+---------------------------------------------------
+
+\t{Step 1}{blue}
+Place wired modems on all containers and
+on the computer you'll be using
+
+\t{Step 2}{blue}
+Connect all of the wired modems together using
+the networking cable.
+Make sure you turn on the wired modems after
+attaching the cable!
+
+\t{Step 3}{blue}
+You will see names in the chat for all of the
+storage containers after turning on the modem.
+Keep track of the name of the container
+you will be using for input / output
+
+\t{Step 4}{blue}
+Update `config.lua` on the computer you will
+be using as the interface.
+
+Type the command `edit config.lua`, and update
+these values:
+
+[\t{'DEFAULT_PAGE'}{red}] = \t{'chris/storage'}{red}
+[\t{'HIDE_BROWSER'}{red}] = \t{true}{yellow}
+[\t{'OUTPUT'}{red}] = \t{'name_of_output_container'}{red}
+
+\input{inputName}{onSubmit}{placeholder=Name of output container}
+
+\btn{  Press here to automatically update the config!  }{updateConfig}

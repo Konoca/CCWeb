@@ -1,0 +1,49 @@
+\init{white}{black}
+CC Markdown!
+
+Set the default text and background color of your
+entire page!
+`\init{textColor}{bgColor}`
+
+Set background color for only specific text!
+`\bg{text}{bgColor}`
+\bg{Highlight!}{yellow}
+
+Set text color for specific text!
+`\t{text}{textColor}`
+\t{Orange!}{orange}
+\t{Magenta!}{magenta}
+\t{Light Blue!}{lightBlue}
+\t{Yellow!}{yellow}
+\t{Lime!}{lime}
+\t{Pink!}{pink}
+\t{Gray!}{gray}
+\t{Light Gray!}{lightGray}
+\t{Cyan!}{cyan}
+\t{Purple!}{purple}
+\t{Blue!}{blue}
+\t{Brown!}{brown}
+\t{Green!}{green}
+\t{Red!}{red}
+
+Set text and background color for specific text!
+`\c{text}{textColor}{bgColor}`
+\c{Combination}{red}{brown}
+
+`\blit{text}{textColorRaw}{bgColorRaw}`
+\blit{Different colors!}{01234567809abcdef}{ffffffffffffffff0}
+
+Create a button, label it, and assign it a function!
+`\btn{text}{functionName}`
+\btn{Example Button!}{exampleFunction} (speaker needed)
+
+Create a text input box!
+- Click on the box to enable text input mode
+- Click anywhere else to disable text input mode
+- Press ENTER key to submit text
+- Current options available:
+-- placeholder=<text>
+-- width=<number> (0 for full width)
+`\input{variableName}{onSubmitFunctionName}{options}`
+\input{inputText}{onSubmitInput}{placeholder=Click and start typing!}
+\input{inputText2}{onSubmitInput2}{placeholder=Small;width=20}
