@@ -19,13 +19,13 @@ local slotTable = {}
 
 -- only runs once, runs when user opens page
 function M.OnLoad()
-    monitor.setTextScale(0.5)
+    if monitor then monitor.setTextScale(0.5) end
     p.handleInit('pink', 'white')
 end
 
 -- runs every time before page is (re)rendered
 function M.PreRender()
-    monitor.setTextScale(0.5)
+    if monitor then monitor.setTextScale(0.5) end
     local w, _ = p.window.getSize()
     r.currentMD = '\n'..(' '):rep((w/2) - (#name/2))..name..'\n\n'
 
@@ -47,7 +47,7 @@ end
 
 -- only runs once, runs when user leaves page
 function M.OnUnload()
-    monitor.setTextScale(1)
+    if monitor then monitor.setTextScale(1) end
 end
 
 -- runs every time an event occurs
