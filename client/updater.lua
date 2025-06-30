@@ -9,7 +9,6 @@ local files = {
     'renderer.lua',
     'network.lua',
     'editor.lua',
-    'file_manager.lua',
     'pages/example/index.ccmd',
     'pages/example/script.lua',
     'pages/template/index.ccmd',
