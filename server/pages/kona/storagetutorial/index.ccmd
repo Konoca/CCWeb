@@ -33,7 +33,7 @@ be using as the interface.
 Type the command `edit config.lua`, and update
 these values:
 
-[\t{'DEFAULT_PAGE'}{red}] = \t{'chris/storage'}{red}
+[\t{'DEFAULT_PAGE'}{red}] = \t{'kona/storage'}{red}
 [\t{'HIDE_BROWSER'}{red}] = \t{true}{yellow}
 [\t{'OUTPUT'}{red}] = \t{'name_of_output_container'}{red}
 

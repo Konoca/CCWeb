@@ -9,7 +9,7 @@ function M.onSubmit()
 end
 
 function M.updateConfig()
-    c['DEFAULT_PAGE'] = 'chris/storage'
+    c['DEFAULT_PAGE'] = 'kona/storage'
     c['HIDE_BROWSER'] = true
     c['OUTPUT'] = M.outputName
 
