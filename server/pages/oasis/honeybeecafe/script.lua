@@ -1,5 +1,9 @@
 local M = {}
 
+local p = require('parser')
+local r = require('renderer')
+local c = require('config')
+
 -- only runs once, runs when user opens page
 function M.OnLoad()
 end

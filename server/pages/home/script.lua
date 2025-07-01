@@ -32,12 +32,8 @@ function M.navStorageTutorial()
     nav('kona/storagetutorial')
 end
 
-function M.navMelody()
-    nav('tash/melody')
-end
-
-function M.navOasis()
-    nav('robely/oasis')
+function M.navOasisCafe()
+    nav('oasis/honeybeecafe')
 end
 
 function M.openEditor()
