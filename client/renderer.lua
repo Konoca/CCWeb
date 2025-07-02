@@ -139,7 +139,6 @@ function M.main()
         local event, dir, x, y = os.pullEventRaw()
 
         if event == 'mouse_click' or event == 'monitor_touch' then
-            event = 'mouse_click'
             if not HIDE_BROWSER then
                 if x == width and y == 1 then
                     resetScreen()
