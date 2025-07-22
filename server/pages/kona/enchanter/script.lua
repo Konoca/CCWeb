@@ -27,7 +27,7 @@ local function getEnchantments()
     for slot, _ in pairs(ALL.list()) do
         local i = ALL.getItemDetail(slot)
         local name = i.displayName
-        local str = ('\n\\cbx{ %s }{boolean%s}\n'):format(name, name, name)
+        local str = ('\n\\cbx{ %s }{boolean%s}'):format(name, name, name)
         md = md..str
 
         M['boolean'..name] = false
