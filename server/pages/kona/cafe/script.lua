@@ -51,10 +51,8 @@ function M.OnUnload()
 end
 
 -- runs every time an event occurs
-function M.OnEvent(event, p1, p2, p3)
-    if event ~= 'mouse_click' then return end
-
-    local y = p3
+function M.OnEvent(event, _, _, y)
+    if event ~= 'mouse_click' and event ~= 'monitor_touch' then return end
 
     if y < 4 then return end
 
