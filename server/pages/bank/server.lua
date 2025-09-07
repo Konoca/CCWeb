@@ -241,6 +241,12 @@ while true do
             ['funds'] = funds,
         }
 
+        if userToSend == 'WITHDRAW' and buffer ~= nil then
+            receiverUser.funds = receiverUser.funds - funds
+            -- TODO if adding more currencies, add ability to differentiate / divide
+            VAULT.pushItems(buffer, 1, funds)
+        end
+
         table.insert(user.transactions, transaction)
         saveUser(USERS_DIR..'/'..message.USER, user)
 
@@ -249,11 +255,6 @@ while true do
 
         response.FUNDS = user.funds
         response.TRANSACTIONS = user.transactions
-
-        if userToSend == 'WITHDRAW' and buffer ~= nil then
-            -- TODO if adding more currencies, add ability to differentiate / divide
-            VAULT.pushItems(buffer, 1, funds)
-        end
     end
 
     if action == 'deposit' then
