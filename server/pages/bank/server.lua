@@ -278,6 +278,10 @@ while true do
         table.insert(user.transactions, transaction)
         saveUser(USERS_DIR..'/'..message.USER, user)
 
+        local depositUser = getUser({['USER']='DEPOSIT'}, true)
+        table.insert(depositUser.transactions, transaction)
+        saveUser(USERS_DIR..'/DEPOSIT', depositUser)
+
         response.FUNDS = user.funds
         response.TRANSACTIONS = user.transactions
     end
