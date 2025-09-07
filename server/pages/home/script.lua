@@ -36,6 +36,10 @@ function M.navOasisCafe()
     nav('oasis/honeybeecafe')
 end
 
+function M.navBank()
+    nav('bank/client')
+end
+
 function M.openEditor()
     multishell.setTitle(multishell.getCurrent(), 'Browser')
     local id = shell.openTab('editor')
