@@ -153,9 +153,10 @@ local function createUser(username, password)
 end
 
 
-print('Ensuring WITHDRAW and DEPOSIT users exist...')
+print('Ensuring logging users exist...')
 createUser('WITHDRAW', '')
 createUser('DEPOSIT', '')
+createUser('TRANSACTIONS', '')
 
 
 print('Awaiting request...')
@@ -252,6 +253,10 @@ while true do
 
         table.insert(receiverUser.transactions, transaction)
         saveUser(USERS_DIR..'/'..userToSend, receiverUser)
+
+        local transactionUser = getUser({['USER']='TRANSACTIONS'}, true)
+        table.insert(transactionUser.transactions, transaction)
+        saveUser(USERS_DIR..'/TRANSACTIONS', transactionUser)
 
         response.FUNDS = user.funds
         response.TRANSACTIONS = user.transactions
