@@ -10,6 +10,9 @@ M.passwordInput = ''
 M.isLoggedIn = false
 M.error = ''
 
+M.recipientInput = ''
+M.fundInput = ''
+
 local PROTOCOL = 'cctp_banking'
 local HOSTNAME = 'CCBank'
 local serverId = nil
@@ -54,13 +57,49 @@ local function drawLoginScreen()
     r.currentMD = md
 end
 
+local function drawUserScreen(response)
+    local w, _ = p.window.getSize()
+    M.recipientInput = ''
+    M.fundInput = ''
+
+    local additionalText = ''
+    if BUFFER_INV ~= nil then
+        additionalText = ' | WITHDRAW'
+    end
+
+    local md = '\n\n'
+    md = md..('Available funds: $%.2f'):format(response.FUNDS)
+
+    md = md..'\n\nSend funds:'
+    md = md..'\n\\input{recipientInput}{useless}{placeholder=Recipient username'..additionalText..'}'
+    md = md..'\n\\input{fundInput}{useless}{placeholder=Amount to send}'
+    md = md..'\n\\btn{'..getHCenteredText('Submit', w)..'}{onSubmitSend}'
+
+    if BUFFER_INV ~= nil then
+        md = md..'\n\\btn{'..getHCenteredText('Deposit', w)..'}{onSubmitDeposit}'
+    end
+
+    md = md..'\n\n\n'..getHCenteredText('Transaction History', w)..'\n'
+    if response.TRANSACTIONS == nil or #response.TRANSACTIONS == 0 then
+        md = md..'None'
+    else
+        for i = #response.TRANSACTIONS, 1, -1 do
+            local v = response.TRANSACTIONS[i]
+            md = md..('%s -> %s : %.2f\n'):format(v.sender, v.receiver, v.funds)
+        end
+    end
+
+    r.currentMD = md
+end
+
 ---@return messageBody if no errors
 ---@return error
-local function sendRequest(action)
+local function sendRequest(action, action_input)
     rednet.send(serverId, {
         ['USER'] = M.usernameInput,
         ['PW'] = M.passwordInput,
-        ['ACTION'] = action
+        ['ACTION'] = action,
+        ['ACTION_INPUT'] = action_input,
     }, PROTOCOL)
 
     local id, message = rednet.receive(PROTOCOL, 5)
@@ -86,13 +125,8 @@ function M.onSubmitLogin()
         return
     end
 
-    r.currentMD = ([[
-Logged in!
-
-username: %s
-
-response: %s
-]]):format(M.usernameInput, textutils.serialize(response))
+    M.isLoggedIn = true
+    drawUserScreen(response)
 end
 
 function M.onSubmitRegister()
@@ -103,17 +137,46 @@ function M.onSubmitRegister()
         return
     end
 
-    r.currentMD = ([[
-Account created!
-
-username: %s
-
-response: %s
-]]):format(M.usernameInput, textutils.serialize(response))
+    M.isLoggedIn = true
+    drawUserScreen(response)
 end
 
 function M.useless()
     -- needs to exist, but doesnt do anything
+end
+
+function M.onSubmitSend()
+    if M.recipientInput == '' then return end
+    if M.fundInput == '' then return end
+
+    local funds = tonumber(('%.2f'):format(M.fundInput))
+    if funds == nil then return end
+
+    local response, error = sendRequest('SEND', {
+        ['USER'] = M.recipientInput,
+        ['FUNDS'] = funds,
+        ['BUFFER'] = BUFFER_INV,
+    })
+
+    if error ~= nil then
+        r.currentMD = error
+        return
+    end
+
+    drawUserScreen(response)
+end
+
+function M.onSubmitDeposit()
+    local response, error = sendRequest('DEPOSIT', {
+        ['BUFFER'] = BUFFER_INV,
+    })
+
+    if error ~= nil then
+        r.currentMD = error
+        return
+    end
+
+    drawUserScreen(response)
 end
 
 
@@ -133,6 +196,37 @@ end
 -- only runs once, runs when user leaves page
 function M.OnUnload()
     peripheral.find('modem', rednet.close)
+end
+
+-- runs every time after page is (re)rendered
+function M.PostRender()
+    if not M.isLoggedIn then return end
+
+    local w, _ = p.window.getSize()
+    local logout = 'Logout'
+
+    p.window.setCursorPos(1, 1)
+    p.handleC(' '..M.usernameInput..' ', 'black', 'green')
+
+    p.handleBgColor((' '):rep(w - #M.usernameInput - #logout - 4), 'lightGray')
+
+    p.window.setCursorPos(w - 6 - 1, 1)
+    p.handleC(' Logout ', 'black', 'red')
+end
+
+function M.OnEvent(event, p1, p2, p3)
+    if event == 'mouse_click' or event == 'monitor_touch' then
+        -- btn, x, y = p1, p2, p3
+        if p3 ~= 1 then return end
+
+        local w, _ = p.window.getSize()
+        if p2 >= w - 6 - 1 then
+            M.usernameInput = ''
+            M.passwordInput = ''
+            M.isLoggedIn = false
+            drawLoginScreen()
+        end
+    end
 end
 
 return M

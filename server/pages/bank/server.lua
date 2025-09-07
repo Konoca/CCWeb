@@ -6,6 +6,10 @@ local CURRENCY = {
     ['minecraft:diamond'] = 1
 }
 
+local VAULT = peripheral.find('inventory', function(name, vault)
+    return name:find('storagedrawers:controller_') ~= nil
+end)
+
 print('Starting up Banking server...')
 print('Hostname: '..HOSTNAME)
 print('ID: '..os.getComputerID())
@@ -20,10 +24,9 @@ rednet.host(PROTOCOL, HOSTNAME)
 -- /users
 ---- /<username>
 ---@class User
----@field vaultIds table -- {minecraft:barrel_1, minecraft:barrel_2, etc...}
 ---@field hashedPassword string -- hashed and salted password
 ---@field salt string
----@field funds table -- {<item>: <amount>}
+---@field funds number
 ---@field itemMap table
 ---@field transactions Transaction
 
@@ -36,6 +39,7 @@ rednet.host(PROTOCOL, HOSTNAME)
 ---@field USER string
 ---@field PW string
 ---@field ACTION string
+---@field ACTION_INPUT any -- depends on ACTION
 
 
 local function simpleHash(str)
@@ -95,47 +99,19 @@ local function saveUser(filePath, user)
     end
 
     local str = textutils.serializeJSON({
-        ['vaultIds'] = user.vaultIds,
         ['hashedPassword'] = user.hashedPassword,
         ['salt'] = user.salt,
         ['transactions'] = user.transactions,
+        ['funds'] = user.funds,
     })
     file:write(str)
     file:close()
 end
 
-
----@param user User
-local function getUserItems(user)
-    local itemMap = {}
-    local funds = {}
-
-    for _, name in pairs(user.vaultIds) do
-        local container = peripheral.wrap(name)
-        local items = container.list()
-        for slot, _ in pairs(items) do
-            local item = container.getItemDetail(slot)
-            table.insert(itemMap, {
-                ['container'] = name,
-                ['slot'] = slot,
-                ['displayName'] = item.displayName,
-                ['name'] = item.name,
-                ['count'] = item.count,
-            })
-
-            if CURRENCY[item.name] ~= nil then
-                if not funds[item.name] then funds[item.name] = 0 end
-                funds[item.name] = funds[item.name] + item.count
-            end
-        end
-    end
-
-    return itemMap, funds
-end
-
 ---@param req Request
+---@param bypassPassword boolean
 ---@return User?
-local function getUser(req)
+local function getUser(req, bypassPassword)
     local userFile = USERS_DIR..'/'..req.USER
 
     if not fileExists(userFile) then
@@ -149,11 +125,9 @@ local function getUser(req)
         return nil
     end
 
-    if not verifyPassword(user.hashedPassword, user.salt, req.PW) then
+    if not bypassPassword and not verifyPassword(user.hashedPassword, user.salt, req.PW) then
         return nil
     end
-
-    user.itemMap, user.funds = getUserItems(user)
 
     return user
 end
@@ -170,13 +144,19 @@ local function createUser(username, password)
 
     local salt, hashedPassword = hashPassword(password)
     local user = {
-        ['vaultIds'] = {},
         ['hashedPassword'] = hashedPassword,
         ['salt'] = salt,
         ['transactions'] = {},
+        ['funds'] = 0,
     }
     return saveUser(path, user)
 end
+
+
+print('Ensuring WITHDRAW and DEPOSIT users exist...')
+createUser('WITHDRAW', '')
+createUser('DEPOSIT', '')
+
 
 print('Awaiting request...')
 while true do
@@ -213,12 +193,91 @@ while true do
         if error ~= nil then
             response['ERROR'] = error
             printError(error)
+        else
+            user = getUser(message)
+            action = 'login'
         end
     end
 
     if action == 'login' then
         response.FUNDS = user.funds
-        response.ITEMS = user.itemMap
+        response.TRANSACTIONS = user.transactions
+    end
+
+    if action == 'send' then
+        local actionIn = message.ACTION_INPUT
+        local userToSend = actionIn.USER
+        local funds = actionIn.FUNDS
+        local buffer = actionIn.BUFFER
+
+        local receiverUser = getUser({['USER']=userToSend}, true)
+        if not receiverUser then
+            response['ERROR'] = 'Invalid recipient.'
+            printError(response['ERROR'])
+            rednet.send(id, response, PROTOCOL)
+            goto SKIP
+        end
+
+        if type(funds) ~= 'number' or funds <= 0 then
+            response['ERROR'] = 'Bad input.'
+            printError(response['ERROR'])
+            rednet.send(id, response, PROTOCOL)
+            goto SKIP
+        end
+
+        if funds > user.funds then
+            response['ERROR'] = 'Insufficient funds.'
+            printError(response['ERROR'])
+            rednet.send(id, response, PROTOCOL)
+            goto SKIP
+        end
+
+        user.funds = user.funds - funds
+        receiverUser.funds = receiverUser.funds + funds
+
+        local transaction = {
+            ['sender'] = message.USER,
+            ['receiver'] = userToSend,
+            ['funds'] = funds,
+        }
+
+        table.insert(user.transactions, transaction)
+        saveUser(USERS_DIR..'/'..message.USER, user)
+
+        table.insert(receiverUser.transactions, transaction)
+        saveUser(USERS_DIR..'/'..userToSend, receiverUser)
+
+        response.FUNDS = user.funds
+        response.TRANSACTIONS = user.transactions
+
+        if userToSend == 'WITHDRAW' and buffer ~= nil then
+            -- TODO if adding more currencies, add ability to differentiate / divide
+            VAULT.pushItems(buffer, 1, funds)
+        end
+    end
+
+    if action == 'deposit' then
+        local buffer = message.ACTION_INPUT.BUFFER
+
+        local funds = 0
+        local b = peripheral.wrap(buffer)
+        for slot, item in pairs(b.list()) do
+            if CURRENCY[item.name] ~= nil then
+                funds = funds + (CURRENCY[item.name] * item.count)
+                VAULT.pullItems(buffer, slot, item.count)
+            end
+        end
+        local transaction = {
+            ['sender'] = 'DEPOSIT',
+            ['receiver'] = message.USER,
+            ['funds'] = funds,
+        }
+
+        user.funds = user.funds + funds
+        table.insert(user.transactions, transaction)
+        saveUser(USERS_DIR..'/'..message.USER, user)
+
+        response.FUNDS = user.funds
         response.TRANSACTIONS = user.transactions
     end
 
