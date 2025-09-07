@@ -85,7 +85,7 @@ local function drawUserScreen(response)
     else
         for i = #response.TRANSACTIONS, 1, -1 do
             local v = response.TRANSACTIONS[i]
-            md = md..('%s -> %s : $%.2f\n'):format(v.sender, v.receiver, v.funds)
+            md = md..('[%d] %s -> %s : $%.2f\n'):format(i, v.sender, v.receiver, v.funds)
         end
     end
 
