@@ -3,7 +3,9 @@ local HOSTNAME = 'CCBank'
 
 local USERS_DIR = '/users'
 local CURRENCY = {
-    ['minecraft:diamond'] = 1
+    -- KEEP IN ORDER OF LARGEST TO SMALLEST
+    ['minecraft:diamond'] = 1,
+    ['betternether:cincinnasite_ingot'] = 0.01,
 }
 
 local VAULT = peripheral.find('inventory', function(name, vault)
@@ -243,9 +245,29 @@ while true do
         }
 
         if userToSend == 'WITHDRAW' and buffer ~= nil then
+            local fundsToWithdraw = funds
+
+            local itemsInVault = {}
+            for slot, item in pairs(VAULT.list()) do
+                itemsInVault[item.name] = {
+                    ['slot'] = slot,
+                    ['count'] = item.count,
+                }
+            end
+
+            for itemname, value in pairs(CURRENCY) do
+                local item = itemsInVault[itemname]
+
+                local maxAvailable = item and item.count or 0
+                local needed = math.floor(fundsToWithdraw / value)
+                local usable = math.min(needed, maxAvailable)
+
+                if usable > 0 then
+                    VAULT.pushItems(buffer, item.slot, usable)
+                end
+                fundsToWithdraw = fundsToWithdraw - (usable * value)
+            end
             receiverUser.funds = receiverUser.funds - funds
-            -- TODO if adding more currencies, add ability to differentiate / divide
-            VAULT.pushItems(buffer, 1, funds)
         end
 
         table.insert(user.transactions, transaction)
