@@ -8,7 +8,7 @@ local CURRENCY = {
     { name = 'betternether:cincinnasite_ingot', value = 0.01 },
 }
 local CURRENCY_MAP = {}
-for _, currency in ipairs(CURRENCY_ORDERED) do
+for _, currency in ipairs(CURRENCY) do
     CURRENCY_MAP[currency.name] = currency.value
 end
 
