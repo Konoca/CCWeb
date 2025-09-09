@@ -322,6 +322,10 @@ while true do
         table.insert(depositUser.transactions, transaction)
         saveUser(USERS_DIR..'/DEPOSIT', depositUser)
 
+        local transactionUser = getUser({['USER']='TRANSACTIONS'}, true)
+        table.insert(transactionUser.transactions, transaction)
+        saveUser(USERS_DIR..'/TRANSACTIONS', transactionUser)
+
         response.FUNDS = user.funds
         response.TRANSACTIONS = user.transactions
     end
