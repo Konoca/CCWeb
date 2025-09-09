@@ -265,7 +265,7 @@ while true do
                 if usable > 0 then
                     VAULT.pushItems(buffer, item.slot, usable)
                 end
-                fundsToWithdraw = fundsToWithdraw - (usable * value)
+                fundsToWithdraw = math.floor((fundsToWithdraw - usable * value) * 100) / 100
             end
             receiverUser.funds = receiverUser.funds - funds
         end
