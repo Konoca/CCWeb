@@ -4,9 +4,14 @@ local HOSTNAME = 'CCBank'
 local USERS_DIR = '/users'
 local CURRENCY = {
     -- KEEP IN ORDER OF LARGEST TO SMALLEST
-    ['minecraft:diamond'] = 1,
-    ['betternether:cincinnasite_ingot'] = 0.01,
+    { name = 'minecraft:diamond', value = 1 },
+    { name = 'betternether:cincinnasite_ingot', value = 0.01 },
 }
+local CURRENCY_MAP = {}
+for _, currency in ipairs(CURRENCY_ORDERED) do
+    CURRENCY_MAP[currency.name] = currency.value
+end
+
 
 local VAULT = peripheral.find('inventory', function(name, vault)
     return name:find('storagedrawers:controller_') ~= nil
@@ -35,7 +40,7 @@ rednet.host(PROTOCOL, HOSTNAME)
 ---@class Transaction
 ---@field sender string
 ---@field receiver string
----@field funds table -- {<item>: <amount>}
+---@field funds number
 
 ---@class Request
 ---@field USER string
@@ -49,11 +54,11 @@ local function simpleHash(str)
     for i = 1, #str do
         hash = (hash * 31 + str:byte(i)) % 2^32
     end
-    return string.format("%08x", hash)
+    return string.format('%08x', hash)
 end
 local function generateSalt(length)
-    local charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    local salt = ""
+    local charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    local salt = ''
     for i = 1, length do
         local rand = math.random(1, #charset)
         salt = salt .. charset:sub(rand, rand)
@@ -161,6 +166,12 @@ createUser('DEPOSIT', '')
 createUser('TRANSACTIONS', '')
 
 
+local function round(num, precision)
+    local mult = 10 ^ (precision or 2)
+    return math.floor(num * mult + 0.5) / mult
+end
+
+
 print('Awaiting request...')
 while true do
     local id, message = rednet.receive(PROTOCOL)
@@ -255,9 +266,11 @@ while true do
                 }
             end
 
-            for itemname, value in pairs(CURRENCY) do
-                local item = itemsInVault[itemname]
+            for _, currency in ipairs(CURRENCY) do
+                local item = itemsInVault[currency.name]
+                local value = currency.value
 
+                fundsToWithdraw = round(fundsToWithdraw, 2)
                 local maxAvailable = item and item.count or 0
                 local needed = math.floor(fundsToWithdraw / value)
                 local usable = math.min(needed, maxAvailable)
@@ -265,7 +278,7 @@ while true do
                 if usable > 0 then
                     VAULT.pushItems(buffer, item.slot, usable)
                 end
-                fundsToWithdraw = math.floor((fundsToWithdraw - usable * value) * 100) / 100
+                fundsToWithdraw = round(fundsToWithdraw - (usable * value), 2)
             end
             receiverUser.funds = receiverUser.funds - funds
         end
@@ -290,8 +303,8 @@ while true do
         local funds = 0
         local b = peripheral.wrap(buffer)
         for slot, item in pairs(b.list()) do
-            if CURRENCY[item.name] ~= nil then
-                funds = funds + (CURRENCY[item.name] * item.count)
+            if CURRENCY_MAP[item.name] ~= nil then
+                funds = funds + (CURRENCY_MAP[item.name] * item.count)
                 VAULT.pullItems(buffer, slot, item.count)
             end
         end
