@@ -191,12 +191,12 @@ while true do
     local response = {}
 
     if type(message) ~= 'table' then
-        print(('[%d] Receieved invalid request'):format(id)
+        print(('[%d] Receieved invalid request'):format(id))
         setError('Invalid Request Message')
         goto SKIP
     end
 
-    print(('[%d] Receieved: {USER: %s, ACTION: %s}'):format(id, message.USER, message.ACTION)
+    print(('[%d] Receieved: {USER: %s, ACTION: %s}'):format(id, message.USER, message.ACTION))
 
     local msgUser = message.USER
     local msgPw = message.PW
