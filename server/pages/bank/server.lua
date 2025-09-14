@@ -106,10 +106,10 @@ local function saveUser(filePath, user)
     end
 
     local str = textutils.serializeJSON({
-        ['hashedPassword'] = user.hashedPassword,
-        ['salt'] = user.salt,
-        ['transactions'] = user.transactions,
-        ['funds'] = user.funds,
+        hashedPassword = user.hashedPassword,
+        salt = user.salt,
+        transactions = user.transactions,
+        funds = user.funds,
     })
     file:write(str)
     file:close()
@@ -151,10 +151,10 @@ local function createUser(username, password)
 
     local salt, hashedPassword = hashPassword(password)
     local user = {
-        ['hashedPassword'] = hashedPassword,
-        ['salt'] = salt,
-        ['transactions'] = {},
-        ['funds'] = 0,
+        hashedPassword = hashedPassword,
+        salt = salt,
+        transactions = {},
+        funds = 0,
     }
     return saveUser(path, user)
 end
@@ -171,41 +171,53 @@ local function round(num, precision)
     return math.floor(num * mult + 0.5) / mult
 end
 
+local function setError(id, errorMsg)
+    printError(errorMsg)
+
+    local response = {ERROR = errorMsg}
+    rednet.send(id, response, PROTOCOL)
+end
+
+local function logTransaction(username, transaction)
+    local user = getUser({['USER']=username}, true)
+    table.insert(user.transactions, transaction)
+    saveUser(USERS_DIR..'/'..username, user)
+end
+
 
 print('Awaiting request...')
 while true do
     local id, message = rednet.receive(PROTOCOL)
-    print(('[%d] Receieved %s'):format(id, textutils.serialize(message)))
     local response = {}
 
     if type(message) ~= 'table' then
-        response['ERROR'] = 'Invalid Request Message'
-        printError(response['ERROR'])
-        rednet.send(id, response, PROTOCOL)
+        print(('[%d] Receieved invalid request'):format(id)
+        setError('Invalid Request Message')
         goto SKIP
     end
 
-    if message['USER'] == nil or message['PW'] == nil then
-        response['ERROR'] = 'Missing Authentication Information'
-        printError(response['ERROR'])
-        rednet.send(id, response, PROTOCOL)
+    print(('[%d] Receieved: {USER: %s, ACTION: %s}'):format(id, message.USER, message.ACTION)
+
+    local msgUser = message.USER
+    local msgPw = message.PW
+    local action = message.ACTION:lower()
+
+    if msgUser == nil or msgPw == nil then
+        setError('Missing Authentication Information')
         goto SKIP
     end
 
     local user = getUser(message)
-    local action = message.ACTION:lower()
 
     if user == nil and action ~= 'register' then
-        response['ERROR'] = 'Invalid Login'
-        printError(response['ERROR'])
-        rednet.send(id, response, PROTOCOL)
+        setError('Invalid Login')
         goto SKIP
     end
 
     if action == 'register' then
         local error = createUser(message.USER, message.PW)
         if error ~= nil then
-            response['ERROR'] = error
+            response.ERROR = error
             printError(error)
         else
             user = getUser(message)
@@ -226,23 +238,17 @@ while true do
 
         local receiverUser = getUser({['USER']=userToSend}, true)
         if not receiverUser then
-            response['ERROR'] = 'Invalid recipient.'
-            printError(response['ERROR'])
-            rednet.send(id, response, PROTOCOL)
+            setError('Invalid recipient.')
             goto SKIP
         end
 
         if type(funds) ~= 'number' or funds <= 0 then
-            response['ERROR'] = 'Bad input.'
-            printError(response['ERROR'])
-            rednet.send(id, response, PROTOCOL)
+            setError('Bad input.')
             goto SKIP
         end
 
         if funds > user.funds then
-            response['ERROR'] = 'Insufficient funds.'
-            printError(response['ERROR'])
-            rednet.send(id, response, PROTOCOL)
+            setError('Insufficient funds.')
             goto SKIP
         end
 
@@ -250,9 +256,9 @@ while true do
         receiverUser.funds = receiverUser.funds + funds
 
         local transaction = {
-            ['sender'] = message.USER,
-            ['receiver'] = userToSend,
-            ['funds'] = funds,
+            sender = message.USER,
+            receiver = userToSend,
+            funds = funds,
         }
 
         if userToSend == 'WITHDRAW' and buffer ~= nil then
@@ -261,8 +267,8 @@ while true do
             local itemsInVault = {}
             for slot, item in pairs(VAULT.list()) do
                 itemsInVault[item.name] = {
-                    ['slot'] = slot,
-                    ['count'] = item.count,
+                    slot = slot,
+                    count = item.count,
                 }
             end
 
@@ -289,9 +295,8 @@ while true do
         table.insert(receiverUser.transactions, transaction)
         saveUser(USERS_DIR..'/'..userToSend, receiverUser)
 
-        local transactionUser = getUser({['USER']='TRANSACTIONS'}, true)
-        table.insert(transactionUser.transactions, transaction)
-        saveUser(USERS_DIR..'/TRANSACTIONS', transactionUser)
+        logTransaction('TRANSACTIONS', transaction)
+
 
         response.FUNDS = user.funds
         response.TRANSACTIONS = user.transactions
@@ -309,22 +314,17 @@ while true do
             end
         end
         local transaction = {
-            ['sender'] = 'DEPOSIT',
-            ['receiver'] = message.USER,
-            ['funds'] = funds,
+            sender = 'DEPOSIT',
+            receiver = message.USER,
+            funds = funds,
         }
 
         user.funds = user.funds + funds
         table.insert(user.transactions, transaction)
         saveUser(USERS_DIR..'/'..message.USER, user)
 
-        local depositUser = getUser({['USER']='DEPOSIT'}, true)
-        table.insert(depositUser.transactions, transaction)
-        saveUser(USERS_DIR..'/DEPOSIT', depositUser)
-
-        local transactionUser = getUser({['USER']='TRANSACTIONS'}, true)
-        table.insert(transactionUser.transactions, transaction)
-        saveUser(USERS_DIR..'/TRANSACTIONS', transactionUser)
+        logTransaction('DEPOSIT', transaction)
+        logTransaction('TRANSACTIONS', transaction)
 
         response.FUNDS = user.funds
         response.TRANSACTIONS = user.transactions
