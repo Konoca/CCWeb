@@ -192,7 +192,7 @@ while true do
 
     if type(message) ~= 'table' then
         print(('[%d] Receieved invalid request'):format(id))
-        setError('Invalid Request Message')
+        setError(id, 'Invalid Request Message')
         goto SKIP
     end
 
@@ -203,14 +203,14 @@ while true do
     local action = message.ACTION:lower()
 
     if msgUser == nil or msgPw == nil then
-        setError('Missing Authentication Information')
+        setError(id, 'Missing Authentication Information')
         goto SKIP
     end
 
     local user = getUser(message)
 
     if user == nil and action ~= 'register' then
-        setError('Invalid Login')
+        setError(id, 'Invalid Login')
         goto SKIP
     end
 
@@ -238,17 +238,17 @@ while true do
 
         local receiverUser = getUser({['USER']=userToSend}, true)
         if not receiverUser then
-            setError('Invalid recipient.')
+            setError(id, 'Invalid recipient.')
             goto SKIP
         end
 
         if type(funds) ~= 'number' or funds <= 0 then
-            setError('Bad input.')
+            setError(id, 'Bad input.')
             goto SKIP
         end
 
         if funds > user.funds then
-            setError('Insufficient funds.')
+            setError(id, 'Insufficient funds.')
             goto SKIP
         end
 
