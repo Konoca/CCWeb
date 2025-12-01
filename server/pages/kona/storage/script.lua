@@ -8,15 +8,30 @@ local p = require('parser')
 local r = require('renderer')
 local c = require('config')
 
-local modem = peripheral.find('modem')
+peripheral.find("modem", rednet.open)
+local modem = peripheral.find('peripheral_hub')
+
 local title = 'Inventory Manager'
 local output = c['OUTPUT']
+local remoteID = c['STORAGE_REMOTE_ID']
 
 local search = ''
 
 ---------------------------------------------
 
 local itemMap = {} -- { [idx] = { [containerName], [slot], [itemName], [quantity] } }
+local filteredItemMap = {}
+
+local function filterItems()
+    filteredItemMap = {}
+    for idx, item in pairs(itemMap) do
+        if search == '' or item.displayName:lower():match(search) == search then
+            item.idx = idx
+            table.insert(filteredItemMap, item)
+        end
+    end
+end
+
 local function fetchItems()
     itemMap = {}
 
@@ -33,6 +48,14 @@ local function fetchItems()
 
     p.window.setCursorPos(1, 9)
     p.window.write('Press ENTER to reload cache!')
+
+    if remoteID ~= nil then
+        rednet.send(remoteID, nil, "fetch")
+        local _, msg = rednet.receive("fetch")
+        itemMap = msg
+        filterItems()
+        return
+    end
 
     local containers = modem.getNamesRemote()
     local count = 0
@@ -62,17 +85,8 @@ local function fetchItems()
 
         ::skip::
     end
-end
 
-local filteredItemMap = {}
-local function filterItems()
-    filteredItemMap = {}
-    for idx, item in pairs(itemMap) do
-        if search == '' or item.displayName:lower():match(search) == search then
-            item.idx = idx
-            table.insert(filteredItemMap, item)
-        end
-    end
+    filterItems()
 end
 
 local function updateItem(idx, i)
@@ -109,6 +123,14 @@ local function searchBackspace()
 end
 
 local function depositItems()
+    if remoteID ~= nil then
+        rednet.send(remoteID, nil, "deposit")
+        local _, msg = rednet.receive("deposit")
+        itemMap = msg
+        filterItems()
+        return
+    end
+
     local container = peripheral.wrap(output)
     local items = container.list()
 
@@ -175,7 +197,6 @@ function M.OnEvent(event, p1, p2, p3)
 
         if key == 'enter' then
             fetchItems()
-            goto skip
         end
 
         filterItems()
@@ -197,8 +218,42 @@ function M.OnEvent(event, p1, p2, p3)
             local amnt = 1
             if btn == 2 then amnt = 64 end
 
+            if remoteID ~= nil then
+                rednet.send(remoteID, {['ITEM'] = item, ['IDX'] = idx, ['AMNT'] = amnt}, 'withdraw')
+                local _, msg = rednet.receive('withdraw')
+                itemMap = msg
+                filterItems()
+                goto skip
+            end
+
             peripheral.wrap(item.container).pushItems(output, item.slot, amnt)
             updateItem(idx, item)
+        end
+    end
+
+    if event == 'rednet_message' then
+        local sender, msg, protocol = p1, p2, p3
+
+        if protocol == 'fetch' then
+            fetchItems()
+            rednet.send(sender, itemMap, protocol)
+            goto skip
+        end
+
+        if protocol == 'deposit' then
+            depositItems()
+            rednet.send(sender, itemMap, protocol)
+            goto skip
+        end
+
+        if protocol == 'withdraw' then
+            local item = msg.ITEM
+            local idx = msg.IDX
+            local amnt = msg.AMNT
+            peripheral.wrap(item.container).pushItems(output, item.slot, amnt)
+            updateItem(idx, item)
+            rednet.send(sender, itemMap, protocol)
+            goto skip
         end
     end
 
