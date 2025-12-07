@@ -36,28 +36,6 @@ local function getEnchantments()
     r.currentMD = md
 end
 
--- \cbx{text}{booleanName}
-local function handleCbx(text,  booleanName)
-    local bool = M[booleanName]
-
-    local color = bool and colors.green or colors.red
-    p.window.setBackgroundColor(color)
-    p.window.setTextColor(colors.black)
-
-    local startX, startY = p.window.getCursorPos()
-    p.window.write(text)
-    local endX, _ = p.window.getCursorPos()
-
-    p.window.setTextColor(p.defaultTextColor)
-    p.window.setBackgroundColor(p.defaultBgColor)
-
-    local func = function() M[booleanName] = not bool end
-    p.buttonTable[startY] = p.buttonTable[startY] or {}
-    for i=startX, endX, 1 do
-        p.buttonTable[startY][i] = func
-    end
-end
-
 local function createSubmitBtn()
     local w, h = p.window.getSize()
     p.buttonTable[h] = {}
@@ -125,16 +103,11 @@ end
 
 function M.OnLoad()
     initialMd = r.currentMD
-    p.tagTable['\\cbx'] = function(...) handleCbx(...) end
     getEnchantments()
 end
 
 function M.PostRender()
     createSubmitBtn()
-end
-
-function M.OnUnload()
-    p.tagTable['\\cbx'] = nil
 end
 
 return M

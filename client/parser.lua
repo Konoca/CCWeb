@@ -18,6 +18,7 @@ M.tagTable = {
     ['\\blit'] = function(...) M.handleBlit(...) end,
     ['\\btn'] = function(...) M.handleBtn(...) end,
     ['\\input'] = function(...) M.handleInput(...) end,
+    ['\\cbx'] = function(...) M.handleCbx(...) end,
 }
 
 M.defaultStyling = {
@@ -30,6 +31,11 @@ M.defaultStyling = {
         ['text-focused'] = colors.black,
         ['background'] = colors.lightGray,
         ['background-focused'] = colors.white,
+    },
+    ['cbx'] = {
+        ['text'] = M.defaultTextColor,
+        ['on'] = colors.green,
+        ['off'] = colors.red
     }
 }
 M.styling = M.defaultStyling
@@ -100,6 +106,33 @@ function M.handleBtn(text, functionName)
         for i=startX, endX, 1 do
             M.buttonTable[startY][i] = func
         end
+    end
+end
+
+-- \cbx{text}{booleanName}
+function M.handleCbx(text, booleanName)
+    if M.script == nil or M.script[booleanName] == nil then
+        return
+    end
+
+    local bool = M.script[booleanName]
+    local styling = M.styling['cbx']
+
+    local color = bool and styling['on'] or styling['off']
+    M.window.setBackgroundColor(color)
+    M.window.setTextColor(styling['text'])
+
+    local startX, startY = M.window.getCursorPos()
+    M.window.write(text)
+    local endX, _ = M.window.getCursorPos()
+
+    M.window.setTextColor(M.defaultTextColor)
+    M.window.setBackgroundColor(M.defaultBgColor)
+
+    local func = function() M.script[booleanName] = not bool end
+    M.buttonTable[startY] = M.buttonTable[startY] or {}
+    for i=startX, endX, 1 do
+        M.buttonTable[startY][i] = func
     end
 end
 
