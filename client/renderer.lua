@@ -163,7 +163,7 @@ function M.main()
                 end
             end
 
-            local offX, offY = x - windowOffset, y - windowOffset
+            local offX, offY = x - (windowOffset*2), y - windowOffset
             if parser.buttonTable[offY] ~= nil
                 and parser.buttonTable[offY][offX] ~= nil then
                 parser.buttonTable[offY][offX]()
