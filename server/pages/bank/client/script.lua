@@ -8,6 +8,7 @@ local c = require('config')
 M.usernameInput = ''
 M.passwordInput = ''
 M.isLoggedIn = false
+M.saveLoginLocally = false
 M.error = ''
 
 M.recipientInput = ''
@@ -42,13 +43,14 @@ local function drawLoginScreen()
    \input{usernameInput}{useless}{placeholder=Enter Username...;width=%d}
 
    \input{passwordInput}{useless}{placeholder=Enter Password...;width=%d}
+   \cbx{ }{saveLoginLocally} Remember me
 
 
 \btn{%s}{onSubmitLogin}
 
 \btn{%s}{onSubmitRegister}
 ]]):format(
-        ('\n'):rep((h / 2) - 5),
+        ('\n'):rep((h / 2) - 6),
         getHCenteredText('Sign in', w),
         getHCenteredText('Connected to Computer #'..serverId, w),
         w - 6, w - 6,
@@ -125,6 +127,20 @@ function M.onSubmitLogin()
     if error ~= nil then
         r.currentMD = error
         return
+    end
+
+    if M.saveLoginLocally then
+        c['BANK_USER'] = M.usernameInput
+        c['BANK_PW'] = M.passwordInput
+
+        local file = fs.open('/config.lua', 'w')
+        file.write('return {')
+        for k, v in pairs(c) do
+            local line = ("\n    ['%s'] = '%s',"):format(k, v)
+            file.write(line)
+        end
+        file.write('\n}')
+        file.close()
     end
 
     M.isLoggedIn = true
