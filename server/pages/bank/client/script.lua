@@ -18,6 +18,8 @@ local HOSTNAME = 'CCBank'
 local serverId = nil
 
 local BUFFER_INV = c['BUFFER']
+local STORED_USER = c['BANK_USER']
+local STORED_PW = c['BANK_PW']
 
 
 local function getHCenteredText(textToCenter, width)
@@ -187,6 +189,13 @@ function M.OnLoad()
 
     if serverId == nil then
         r.currentMD = 'Server could not be found...'
+        return
+    end
+
+    if STORED_USER ~= nil and STORED_PW ~= nil then
+        M.usernameInput = STORED_USER
+        M.passwordInput = STORED_PW
+        M.onSubmitLogin()
         return
     end
 
