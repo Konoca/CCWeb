@@ -120,6 +120,21 @@ local function sendRequest(action, action_input)
     return message, nil
 end
 
+local function saveLogin()
+    if not M.saveLoginLocally then return end
+
+    c['BANK_USER'] = M.usernameInput
+    c['BANK_PW'] = M.passwordInput
+
+    local file = fs.open('/config.lua', 'w')
+    file.write('return {')
+    for k, v in pairs(c) do
+        local line = ("\n    ['%s'] = '%s',"):format(k, v)
+        file.write(line)
+    end
+    file.write('\n}')
+    file.close()
+end
 
 function M.onSubmitLogin()
     local response, error = sendRequest('LOGIN')
@@ -129,19 +144,7 @@ function M.onSubmitLogin()
         return
     end
 
-    if M.saveLoginLocally then
-        c['BANK_USER'] = M.usernameInput
-        c['BANK_PW'] = M.passwordInput
-
-        local file = fs.open('/config.lua', 'w')
-        file.write('return {')
-        for k, v in pairs(c) do
-            local line = ("\n    ['%s'] = '%s',"):format(k, v)
-            file.write(line)
-        end
-        file.write('\n}')
-        file.close()
-    end
+    saveLogin()
 
     M.isLoggedIn = true
     drawUserScreen(response)
@@ -154,6 +157,8 @@ function M.onSubmitRegister()
         r.currentMD = error
         return
     end
+
+    saveLogin()
 
     M.isLoggedIn = true
     drawUserScreen(response)
