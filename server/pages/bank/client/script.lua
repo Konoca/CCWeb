@@ -50,7 +50,7 @@ local function drawLoginScreen()
 
 \btn{%s}{onSubmitRegister}
 ]]):format(
-        ('\n'):rep((h / 2) - 5),
+        ('\n'):rep((h / 2) - 6),
         getHCenteredText('Sign in', w),
         getHCenteredText('Connected to Computer #'..serverId, w),
         w - 6, w - 6,

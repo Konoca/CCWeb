@@ -103,7 +103,7 @@ function M.handleBtn(text, functionName)
     if M.script ~= nil then
         local func = M.script[functionName]
         M.buttonTable[startY] = M.buttonTable[startY] or {}
-        for i=startX, endX, 1 do
+        for i=startX-1, endX-2, 1 do
             M.buttonTable[startY][i] = func
         end
     end
@@ -131,7 +131,7 @@ function M.handleCbx(text, booleanName)
 
     local func = function() M.script[booleanName] = not bool end
     M.buttonTable[startY] = M.buttonTable[startY] or {}
-    for i=startX, endX, 1 do
+    for i=startX-1, endX-2, 1 do
         M.buttonTable[startY][i] = func
     end
 end
@@ -198,7 +198,7 @@ function M.handleInput(var, onSubmit, optionsRaw)
             end)
         else
             M.buttonTable[startY] = M.buttonTable[startY] or {}
-            for i=startX, endX, 1 do
+            for i=startX-1, endX-2, 1 do
                 M.buttonTable[startY][i] = function() M.focusedInput = var end
             end
         end
