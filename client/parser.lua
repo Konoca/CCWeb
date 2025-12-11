@@ -150,7 +150,7 @@ function M.handleInput(var, onSubmit, optionsRaw)
     local placeholder = options['placeholder'] or ''
     local width = tonumber(options['width']) or 0
     if width == 0 then width, _ = M.window.getSize() end
-    local hidden = (options['hidden'] == 'true') or 0
+    local hidden = (options['hidden'] == 'true') or false
 
     local isFocused = M.focusedInput == var and '-focused' or ''
     local text = M.focusedInput == var and '' or placeholder
@@ -165,7 +165,7 @@ function M.handleInput(var, onSubmit, optionsRaw)
         text = M.script[var]
     end
 
-    if hidden then
+    if hidden and text ~= placeholder then
         text = ('*'):rep(#text)
     end
 
