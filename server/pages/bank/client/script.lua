@@ -42,7 +42,7 @@ local function drawLoginScreen()
 
    \input{usernameInput}{useless}{placeholder=Enter Username...;width=%d}
 
-   \input{passwordInput}{useless}{placeholder=Enter Password...;width=%d}
+   \input{passwordInput}{useless}{placeholder=Enter Password...;width=%d;hidden=true}
    \cbx{ }{saveLoginLocally} Remember me
 
 
